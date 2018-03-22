@@ -5,5 +5,8 @@
   "license": "MIT",
   "dependencies": {
     "nightwatch": "^0.9.20"
+  },
+  "scripts": {
+	"nw-cli": "nightwatch --env default -c ./test/nightwatch.conf.json"
   }
 }
