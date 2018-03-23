@@ -1,8 +1,11 @@
 const fs = require('fs');
+const path = require('path');
 const { pass, fail } = require('create-jest-runner');
 const Nightwatch = require('nightwatch/lib/index.js');
 const {CliRunner} = Nightwatch;
 // const TestCase = require('nightwatch/lib/runner/testcase');
+const TestSuite = require('nightwatch/lib/runner/testsuite');
+const Runner = require('nightwatch/lib/runner/run');
 
 module.exports = ({ testPath, config, globalConfig}) => {
     const start = Date.now();
@@ -12,44 +15,74 @@ module.exports = ({ testPath, config, globalConfig}) => {
         Nightwatch.cli(function(argv) {
             argv._source = argv['_'].slice(0);
             debugger;
-            const runner = CliRunner(argv);
-            console.log('runner instance', runner);
-            runner.setup({}, () => {
+            const cliRunner = CliRunner(argv);
+            console.log('runner instance', cliRunner);
+            cliRunner.setup({}, () => {
                 console.log('setup done')
             });
-            
-            const {settings} = runner;
 
-            console.log('runner is set up, runner has settings', settings)
+            console.log('this succeeds')
+
+            const runner = new Runner(testPath, cliRunner.test_settings, {
+                output_folder : cliRunner.output_folder,
+                src_folders : cliRunner.settings.src_folders,
+                live_output : cliRunner.settings.live_output,
+                detailed_output : cliRunner.settings.detailed_output,
+                start_session: cliRunner.startSession,
+                reporter : cliRunner.argv.reporter,
+                testcase : cliRunner.argv.testcase,
+                end_session_on_fail : cliRunner.endSessionOnFail,
+                retries : cliRunner.argv.retries,
+                test_worker : cliRunner.isTestWorker(),
+                suite_retries : cliRunner.argv.suiteRetries
+            }, function runnerDoneCb() {
+                console.log('runnerDoneCB');
+            });
+
+            console.log('runner is ready with all the settings', runner);
+
+            //fullPaths are created in lib/runner/run:readPaths,
+            //let's mimic similar behavior for a single file 
+            //by simply taking the directory name
+            const fullPaths = [path.dirname(testPath)];
 
             //start selenium
             //init test suite
             //run hooks
 
-            //now I need something like this
-            
-            // var runner = new Runner(source, this.test_settings, {
-            //     output_folder : this.output_folder,
-            //     src_folders : this.settings.src_folders,
-            //     live_output : this.settings.live_output,
-            //     detailed_output : this.settings.detailed_output,
-            //     start_session: this.startSession,
-            //     reporter : this.argv.reporter,
-            //     testcase : this.argv.testcase,
-            //     end_session_on_fail : this.endSessionOnFail,
-            //     retries : this.argv.retries,
-            //     test_worker : this.isTestWorker(),
-            //     suite_retries : this.argv.suiteRetries
-            //   }, fn);
-            //   return runner.run();
+            //so runner walks over all the files in directory
+            //and executres lib/runner/run:runTestModule for each file.
 
+            //runTestModule will create new TestSuite
+            // Because jest provides us with a file name, we can instanciate new TestSuite
+            // without creating Runner.
 
-            runner.startSelenium(function() {
-                console.log('selenium started')
-                const end = +new Date();
+            console.log('now going to initiate TestSuite');
+            //testSuite fails to be initiated, because at this step nightwatch 
+            //inherits default values for page objects dire and other stuff, and fails to load
+            //anything from there
 
+            //so at this moment, we are not using nightwatch.conf.json and because of
+            //that we are inheriting some configuration
+
+            //how to fix it? we need a way to pass config to nightwatch
+
+            //i'm going to try using cosmiconfig
+            //to allow specifying seetings for jest-runner-nightwatch
+
+            const testSuite = new TestSuite(testPath, fullPaths, runner.options, runner.additionalOpts, function doneCb() {
+                console.log('testSuite doneCb')
                 resolve(pass({ start, end, test: { path: testPath } }))
             })
+
+            
+
+
+            // runner.startSelenium(function() {
+            //     console.log('selenium started')
+            //     const end = +new Date();
+
+            // })
         })
         
         
@@ -58,6 +91,7 @@ module.exports = ({ testPath, config, globalConfig}) => {
         
     }).catch(e => {
         console.log('jest runner failed to execute nightwatch')
+        console.log(e);
         return fail(e);
     })
 };
