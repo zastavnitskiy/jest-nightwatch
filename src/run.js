@@ -109,35 +109,48 @@ module.exports = ({ testPath, config, globalConfig }) => {
             runner.options,
             runner.additionalOpts
           );
-
-          console.log("testsuite initiated", testSuite);
+          const testSuideReportKey = testSuite.getReportKey();
+          console.log("testsuite initiated", testSuideReportKey, testSuite);
 
           testSuite
-            .on("testcase:finished", () => {
-              console.log("testcase:finished");
+            .on("testcase:finished", (results, errors, time) => {
+              console.log("testcase:finished", results, errors, time);
             })
             .run()
-            .then(() => {
-              console.log("testSuite resolved");
+            .then(testResults => {
               const end = Date.now();
-              resolve(pass({ start, end, test: { path: testPath } }));
+
+              console.log("testSuite resolved", testResults);
+
+              const { failed } = testResults;
+              if (failed) {
+                reject(fail({ start, end, test: { path: testPath } }));
+              } else {
+                resolve(pass({ start, end, test: { path: testPath } }));
+              }
+
+              resolve();
             })
             .catch(e => {
               console.log("error when running test", e);
-              reject(fail({}));
+              reject(
+                fail({
+                  start,
+                  end: Date.now(),
+                  test: { path: testPath },
+                  errorMessage: "Error while running the test" + e
+                })
+              );
             });
-
-          // runner.startSelenium(function() {
-          //     console.log('selenium started')
-          //     const end = +new Date();
-
-          // })
         });
       });
     })
     .catch(e => {
-      console.log("jest runner failed to execute nightwatch");
-      console.log(e);
-      fail({});
+      throw fail({
+        start,
+        end: Date.now(),
+        test: { path: testPath },
+        errorMessage: "jest-runner-nightwatch failed to execute nightwatch" + e
+      });
     });
 };
