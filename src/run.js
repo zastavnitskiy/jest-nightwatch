@@ -9,9 +9,7 @@ const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
 
 const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
-    cliOptions: {
-
-    }
+  cliOptions: {}
 });
 
 module.exports = ({ testPath, config, globalConfig }) => {
@@ -20,29 +18,30 @@ module.exports = ({ testPath, config, globalConfig }) => {
     .load()
     .then(runnerConfig => {
       console.log("runnerConfig", runnerConfig);
-        
 
       return new Promise((resolve, reject) => {
         console.log("runner", testPath, config, globalConfig);
 
         Nightwatch.cli(function(argv) {
-        
-          const cliRunner = CliRunner({...{
-            _: [],
-            config: './nightwatch.json',
-            c: './nightwatch.json',
-            output: 'tests_output',
-            o: 'tests_output',
-            reporter: 'junit',
-            r: 'junit',
-            env: 'default',
-            e: 'default',
-            filter: '',
-            f: '',
-            tag: '',
-            a: '',
-            _source: []
-          }, ...runnerConfig.config.cliOptions});
+          const cliRunner = CliRunner({
+            ...{
+              _: [],
+              config: "./nightwatch.json",
+              c: "./nightwatch.json",
+              output: "tests_output",
+              o: "tests_output",
+              reporter: "junit",
+              r: "junit",
+              env: "default",
+              e: "default",
+              filter: "",
+              f: "",
+              tag: "",
+              a: "",
+              _source: []
+            },
+            ...runnerConfig.config.cliOptions
+          });
 
           console.log("runner instance", cliRunner);
 
@@ -108,12 +107,24 @@ module.exports = ({ testPath, config, globalConfig }) => {
             testPath,
             fullPaths,
             runner.options,
-            runner.additionalOpts,
-            function doneCb() {
-              console.log("testSuite doneCb");
-              resolve(pass({ start, end, test: { path: testPath } }));
-            }
+            runner.additionalOpts
           );
+
+          console.log("testsuite initiated", testSuite);
+
+          testSuite
+            .on("testcase:finished", () => {
+              console.log("testcase:finished");
+            })
+            .run()
+            .then(() => {
+              console.log("testSuite resolved");
+              resolve(pass({ start, end, test: { path: testPath } }));
+            })
+            .catch(e => {
+              console.log("error when running test", e);
+              reject(fail({}));
+            });
 
           // runner.startSelenium(function() {
           //     console.log('selenium started')
