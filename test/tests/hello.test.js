@@ -1,9 +1,8 @@
 module.exports = {
   "test-name": browser => {
-    debugger;
     browser
-      .url('http://booking.com')
+      .url('http://google.com')
+      .waitForElementVisible('#hplogo', 3000)
       .end();
-
   }
 }

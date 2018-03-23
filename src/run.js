@@ -119,6 +119,7 @@ module.exports = ({ testPath, config, globalConfig }) => {
             .run()
             .then(() => {
               console.log("testSuite resolved");
+              const end = Date.now();
               resolve(pass({ start, end, test: { path: testPath } }));
             })
             .catch(e => {
