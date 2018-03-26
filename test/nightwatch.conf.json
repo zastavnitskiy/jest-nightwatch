@@ -24,6 +24,7 @@
       "selenium_port"  : 80,
       "selenium_host"  : "selenium-grid.fab4.dqs.booking.com",
       "silent": true,
+      "output": false,
       "screenshots" : {
         "enabled" : false,
         "path" : ""

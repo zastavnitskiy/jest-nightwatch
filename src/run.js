@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const cosmiconfig = require("cosmiconfig");
+const winston = require("winston");
 const { pass, fail } = require("create-jest-runner");
 const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
@@ -12,16 +13,53 @@ const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
   cliOptions: {}
 });
 
+function nightwatchResultsToTestResult({ testPath, start, nightwatchResults }) {
+  console.log(JSON.stringify(nightwatchResults, null, 2));
+  const { passed, failed, errors, skipped, timestamp, testcases } = nightwatchResults;
+  const testResult = {
+    console: null,
+    failureMessage: "errorMessage",
+    numFailingTests: failed,
+    numPassingTests: passed,
+    numPendingTests: 0,
+    perfStats: {
+      end: Date.now(),
+      start
+    },
+    skipped: false,
+    snapshot: {
+      added: 0,
+      fileDeleted: false,
+      matched: 0,
+      unchecked: 0,
+      unmatched: 0,
+      updated: 0
+    },
+    sourceMaps: {},
+    testExecError: null,
+    testFilePath: testPath,
+    testResults: [
+      {
+        ancestorTitles: [],
+        duration: 1000,
+        failureMessages: ["test.errorMessage"],
+        fullName: "test.testPath",
+        numPassingAsserts: 1,
+        status: "failed",
+        title: JSON.stringify(testcases, null)
+      }
+    ]
+  };
+
+  return testResult;
+}
+
 module.exports = ({ testPath, config, globalConfig }) => {
   const start = Date.now();
   return cosmiconfigExplorer
     .load()
     .then(runnerConfig => {
-      console.log("runnerConfig", runnerConfig);
-
       return new Promise((resolve, reject) => {
-        console.log("runner", testPath, config, globalConfig);
-
         Nightwatch.cli(function(argv) {
           const cliRunner = CliRunner({
             ...{
@@ -43,13 +81,7 @@ module.exports = ({ testPath, config, globalConfig }) => {
             ...runnerConfig.config.cliOptions
           });
 
-          console.log("runner instance", cliRunner);
-
-          cliRunner.setup({}, () => {
-            console.log("setup done");
-          });
-
-          console.log("this succeeds");
+          cliRunner.setup({}, function setupDone() {});
 
           const runner = new Runner(
             testPath,
@@ -67,12 +99,8 @@ module.exports = ({ testPath, config, globalConfig }) => {
               test_worker: cliRunner.isTestWorker(),
               suite_retries: cliRunner.argv.suiteRetries
             },
-            function runnerDoneCb() {
-              console.log("runnerDoneCB");
-            }
+            function runnerDoneCb() {}
           );
-
-          console.log("runner is ready with all the settings", runner);
 
           //fullPaths are created in lib/runner/run:readPaths,
           //let's mimic similar behavior for a single file
@@ -90,7 +118,6 @@ module.exports = ({ testPath, config, globalConfig }) => {
           // Because jest provides us with a file name, we can instanciate new TestSuite
           // without creating Runner.
 
-          console.log("now going to initiate TestSuite");
           //testSuite fails to be initiated, because at this step nightwatch
           //inherits default values for page objects dire and other stuff, and fails to load
           //anything from there
@@ -110,35 +137,60 @@ module.exports = ({ testPath, config, globalConfig }) => {
             runner.additionalOpts
           );
           const testSuideReportKey = testSuite.getReportKey();
-          console.log("testsuite initiated", testSuideReportKey, testSuite);
+
+          const logger = winston.createLogger({
+            level: "info",
+            format: winston.format.json(),
+            transports: [
+              //
+              // - Write to all logs with level `info` and below to `combined.log`
+              // - Write all logs error (and below) to `error.log`.
+              //
+              new winston.transports.File({
+                filename: `${testSuideReportKey}.log`
+              })
+            ]
+          });
 
           testSuite
             .on("testcase:finished", (results, errors, time) => {
-              console.log("testcase:finished", results, errors, time);
+              logger.info("testcase:finished");
+              logger.info(results);
+              logger.info("testcase:finished-end");
             })
             .run()
             .then(testResults => {
               const end = Date.now();
+              logger.info("resolve");
+              logger.info(testResults);
+              logger.info("resolve-end");
 
-              console.log("testSuite resolved", testResults);
+              logger.info({
+                start,
+                end: Date.now(),
+                test: { path: testPath }
+              });
 
-              const { failed } = testResults;
-              if (failed) {
-                reject(fail({ start, end, test: { path: testPath } }));
-              } else {
-                resolve(pass({ start, end, test: { path: testPath } }));
-              }
-
-              resolve();
+              resolve(
+                nightwatchResultsToTestResult({
+                  nightwatchResults: testResults,
+                  testPath,
+                  start
+                })
+              );
             })
             .catch(e => {
-              console.log("error when running test", e);
-              reject(
+              //todo improve with proper error and remove console.log
+              console.error(e);
+              resolve(
                 fail({
                   start,
                   end: Date.now(),
-                  test: { path: testPath },
-                  errorMessage: "Error while running the test" + e
+                  test: {
+                    path: testPath,
+                    errorMessage: e.message,
+                    title: e.message
+                  }
                 })
               );
             });
@@ -146,11 +198,7 @@ module.exports = ({ testPath, config, globalConfig }) => {
       });
     })
     .catch(e => {
-      throw fail({
-        start,
-        end: Date.now(),
-        test: { path: testPath },
-        errorMessage: "jest-runner-nightwatch failed to execute nightwatch" + e
-      });
+      console.log(e);
+      throw e;
     });
 };
