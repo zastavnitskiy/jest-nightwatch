@@ -1,58 +1,15 @@
 const fs = require("fs");
 const path = require("path");
 const cosmiconfig = require("cosmiconfig");
-const winston = require("winston");
 const { pass, fail } = require("create-jest-runner");
 const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
-// const TestCase = require('nightwatch/lib/runner/testcase');
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
 
 const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
   cliOptions: {}
 });
-
-function nightwatchResultsToTestResult({ testPath, start, nightwatchResults }) {
-  console.log(JSON.stringify(nightwatchResults, null, 2));
-  const { passed, failed, errors, skipped, timestamp, testcases } = nightwatchResults;
-  const testResult = {
-    console: null,
-    failureMessage: "errorMessage",
-    numFailingTests: failed,
-    numPassingTests: passed,
-    numPendingTests: 0,
-    perfStats: {
-      end: Date.now(),
-      start
-    },
-    skipped: false,
-    snapshot: {
-      added: 0,
-      fileDeleted: false,
-      matched: 0,
-      unchecked: 0,
-      unmatched: 0,
-      updated: 0
-    },
-    sourceMaps: {},
-    testExecError: null,
-    testFilePath: testPath,
-    testResults: [
-      {
-        ancestorTitles: [],
-        duration: 1000,
-        failureMessages: ["test.errorMessage"],
-        fullName: "test.testPath",
-        numPassingAsserts: 1,
-        status: "failed",
-        title: JSON.stringify(testcases, null)
-      }
-    ]
-  };
-
-  return testResult;
-}
 
 module.exports = ({ testPath, config, globalConfig }) => {
   const start = Date.now();
@@ -136,48 +93,79 @@ module.exports = ({ testPath, config, globalConfig }) => {
             runner.options,
             runner.additionalOpts
           );
-          const testSuideReportKey = testSuite.getReportKey();
+          const suiteName = testSuite.getReportKey();
 
-          const logger = winston.createLogger({
-            level: "info",
-            format: winston.format.json(),
-            transports: [
-              //
-              // - Write to all logs with level `info` and below to `combined.log`
-              // - Write all logs error (and below) to `error.log`.
-              //
-              new winston.transports.File({
-                filename: `${testSuideReportKey}.log`
-              })
-            ]
-          });
+          const aggregated = {
+            passed: 0,
+            failed: 0,
+            tests: [],
+            suiteName
+          };
 
           testSuite
             .on("testcase:finished", (results, errors, time) => {
-              logger.info("testcase:finished");
-              logger.info(results);
-              logger.info("testcase:finished-end");
+              data.info("testcase:finished", results, errors);
+              const { passed, failed, tests } = results;
+              const testsWithName = tests.map(test => ({
+                ...test,
+                testName: testSuite.currentTest
+              }));
+
+              aggregated.passed += passed;
+              aggregated.failed += failed;
+              aggregated.tests = aggregated.tests.concat(testsWithName);
             })
             .run()
-            .then(testResults => {
-              const end = Date.now();
-              logger.info("resolve");
-              logger.info(testResults);
-              logger.info("resolve-end");
+            .then(nightwatchResults => {
+              data.info("testcase:aggregatedResult", aggregated);
+              data.info("testcase:nightwatchResults", nightwatchResults);
 
-              logger.info({
-                start,
-                end: Date.now(),
-                test: { path: testPath }
-              });
+              //resolve with aggregated data
+              const { suiteName, tests, passed, failed } = aggregated;
 
-              resolve(
-                nightwatchResultsToTestResult({
-                  nightwatchResults: testResults,
-                  testPath,
-                  start
-                })
+              const testResults = tests.map(
+                ({ testName, failure, fullMsg, stackTrace, message }) => {
+                  return {
+                    ancestorTitles: [testName],
+                    duration: Date.now() - start,
+                    failureMessages: [fullMsg],
+                    fullName: `fullname: ${suiteName} - ${testName}`,
+                    location: null,
+                    numPassingAsserts: 0,
+                    status: Boolean(failure) ? "failed" : "passed",
+                    title: `${message}`
+                  };
+                }
               );
+
+              const failureMessage = tests.filter(({failure}) => failure).map(({testName, failure, message, fullMsg, stackTrace}) => {
+                return `${fullMsg || message}\n${failure}\n${stackTrace}\n\n`
+              }).join('\n')
+
+              resolve({
+                failureMessage: failureMessage || null,
+                console: null,
+                numFailingTests: failed,
+                numPassingTests: passed,
+                numPendingTests: 0,
+                perfStats: {
+                  end: Date.now(),
+                  start
+                },
+                skipped: false,
+                snapshot: {
+                  added: 0,
+                  fileDeleted: false,
+                  matched: 0,
+                  unchecked: 0,
+                  unmatched: 0,
+                  updated: 0
+                },
+                sourceMaps: {},
+                testExecError: null,
+                testFilePath: suiteName,
+                testResults
+              });
             })
             .catch(e => {
               //todo improve with proper error and remove console.log
