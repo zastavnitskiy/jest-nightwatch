@@ -6,7 +6,6 @@ const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
-const winston = require("winston");
 
 const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
   cliOptions: {}
@@ -56,21 +55,10 @@ function errorToTestResult(error) {
 }
 
 module.exports = async function({ testPath, config, globalConfig }) {
-  const logger = winston.createLogger({
-    level: "info",
-    format: winston.format.json(),
-    transports: [
-      new winston.transports.File({
-        filename: `${testPath}.log`
-      })
-    ]
-  });
-
   const start = Date.now();
   return cosmiconfigExplorer
     .load()
     .then(runnerConfig => {
-      logger.info("hello");
       return new Promise((resolve, reject) => {
         Nightwatch.cli(function(argv) {
           const cliRunner = CliRunner({
@@ -156,11 +144,9 @@ module.exports = async function({ testPath, config, globalConfig }) {
             tests: [],
             suiteName
           };
-          logger.info("before testsuite");
 
           testSuite
             .on("testcase:finished", (results, errors, time) => {
-              logger.info("testcase:finished");
               const { passed, failed, tests } = results;
               const testsWithName = tests.map(test => ({
                 ...test,
@@ -173,10 +159,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
             })
             .run()
             .then(nightwatchResults => {
-              logger.info("resolve");
-
               const { suiteName, tests, passed, failed } = aggregated;
-
               const testResults = tests.map(
                 ({ testName, failure, fullMsg, stackTrace, message }) => {
                   return {
@@ -234,8 +217,6 @@ module.exports = async function({ testPath, config, globalConfig }) {
       });
     })
     .catch(error => {
-      logger.info("catch outside", { error });
-
       return errorToTestResult(error);
     });
 };
