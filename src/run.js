@@ -7,7 +7,7 @@ const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
 
-const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
+const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
 });
 
@@ -59,6 +59,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
   return cosmiconfigExplorer
     .load()
     .then(runnerConfig => {
+      console.log(runnerConfig)
       return new Promise((resolve, reject) => {
         Nightwatch.cli(function(argv) {
           const cliRunner = CliRunner({
@@ -210,7 +211,10 @@ module.exports = async function({ testPath, config, globalConfig }) {
             .catch(error => {
               // nightwatch then is a deferred, so if the error is not consumed, nothing happens
               // we need to catch it and throw or reject the runner promise.
-              const testResult = {...errorToTestResult(error), testFilePath: suiteName};
+              const testResult = {
+                ...errorToTestResult(error),
+                testFilePath: suiteName
+              };
               resolve(testResult);
             });
         });

@@ -1,11 +1,9 @@
-# Experimental jest-nightwatch runner.
-Allows users run night watch tests from jest ui.
+# jest-runner-nightwatch
 
-# Contributing
-Run nightwatch:
+Run your nightwatch tests using jest as a runner.
 
-`yarn nw-cli`
+# Usage
 
-Run jest:
+    
 
-`yarn jest`
+# Configuration

@@ -1,5 +1,8 @@
-{
-  "src_folders" : ["test/tests"],
+
+const output = typeof process.env.DISABLE_NIGHTWATCH_OUTPUT !== 'undefined' ? !process.env.DISABLE_NIGHTWATCH_OUTPUT : true;
+
+module.exports = {
+  "src_folders" : ["tests"],
   "output_folder" : "reports",
   "custom_commands_path" : "",
   "custom_assertions_path" : "",
@@ -24,7 +27,7 @@
       "selenium_port"  : 4444,
       "selenium_host"  : "localhost",
       "silent": true,
-      "output": false,
+      output,
       "screenshots" : {
         "enabled" : false,
         "path" : ""
