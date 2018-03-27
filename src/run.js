@@ -59,7 +59,6 @@ module.exports = async function({ testPath, config, globalConfig }) {
   return cosmiconfigExplorer
     .load()
     .then(runnerConfig => {
-      console.log(runnerConfig)
       return new Promise((resolve, reject) => {
         Nightwatch.cli(function(argv) {
           const cliRunner = CliRunner({
