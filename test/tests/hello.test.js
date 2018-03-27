@@ -4,8 +4,7 @@ module.exports = {
   },
 
   afterEach: browser => {
-    console.log("browser", browser);
-    browser.end();
+    
   },
 
   "first-test": browser => {
