@@ -1,16 +1,19 @@
 module.exports = {
-  "test-google": browser => {
-    browser
-      .url('https://google.com')
-      .waitForElementVisible('body', 3000)
-      .end();
+  beforeEach: browser => {
+    browser.url("https://google.com");
   },
-  
-  "test-bookings": browser => {
-    browser
-      .url('https://booking.com.com');
-    browser.expect.element('form').to.be.present;
-    browser.expect.element('form').to.be.visible;
+
+  afterEach: browser => {
+    console.log("browser", browser);
     browser.end();
+  },
+
+  "first-test": browser => {
+    browser.waitForElementVisible("body", 3000);
+  },
+
+  "second-test": browser => {
+    browser.expect.element("form").to.be.present;
+    browser.expect.element("form").to.be.visible;
   }
-}
+};

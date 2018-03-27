@@ -6,16 +6,71 @@ const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
+const winston = require("winston");
 
 const cosmiconfigExplorer = cosmiconfig("jest-nightwatch-runner", {
   cliOptions: {}
 });
 
-module.exports = ({ testPath, config, globalConfig }) => {
+function errorToTestResult(error) {
+  const errorMessage = error.message || "Unknown error";
+  const failureMessage = `\nThere was an error while starting the test runner:\n\n${errorMessage}\n\n${
+    error.stack
+  }\n`;
+
+  return {
+    failureMessage,
+    console: null,
+    numFailingTests: 1,
+    numPassingTests: 0,
+    numPendingTests: 0,
+    perfStats: {
+      end: Date.now(),
+      start: Date.now()
+    },
+    skipped: false,
+    snapshot: {
+      added: 0,
+      fileDeleted: false,
+      matched: 0,
+      unchecked: 0,
+      unmatched: 0,
+      updated: 0
+    },
+    sourceMaps: {},
+    testExecError: error,
+    testFilePath: "suiteName",
+    testResults: [
+      {
+        ancestorTitles: [],
+        duration: 0,
+        failureMessages: ["fullMsg"],
+        fullName: `fullname: `,
+        location: null,
+        numPassingAsserts: 0,
+        status: "skipped",
+        title: `title`
+      }
+    ]
+  };
+}
+
+module.exports = async function({ testPath, config, globalConfig }) {
+  const logger = winston.createLogger({
+    level: "info",
+    format: winston.format.json(),
+    transports: [
+      new winston.transports.File({
+        filename: `${testPath}.log`
+      })
+    ]
+  });
+
   const start = Date.now();
   return cosmiconfigExplorer
     .load()
     .then(runnerConfig => {
+      logger.info("hello");
       return new Promise((resolve, reject) => {
         Nightwatch.cli(function(argv) {
           const cliRunner = CliRunner({
@@ -101,10 +156,11 @@ module.exports = ({ testPath, config, globalConfig }) => {
             tests: [],
             suiteName
           };
+          logger.info("before testsuite");
 
           testSuite
             .on("testcase:finished", (results, errors, time) => {
-              data.info("testcase:finished", results, errors);
+              logger.info("testcase:finished");
               const { passed, failed, tests } = results;
               const testsWithName = tests.map(test => ({
                 ...test,
@@ -117,10 +173,8 @@ module.exports = ({ testPath, config, globalConfig }) => {
             })
             .run()
             .then(nightwatchResults => {
-              data.info("testcase:aggregatedResult", aggregated);
-              data.info("testcase:nightwatchResults", nightwatchResults);
+              logger.info("resolve");
 
-              //resolve with aggregated data
               const { suiteName, tests, passed, failed } = aggregated;
 
               const testResults = tests.map(
@@ -138,9 +192,12 @@ module.exports = ({ testPath, config, globalConfig }) => {
                 }
               );
 
-              const failureMessage = tests.filter(({failure}) => failure).map(({testName, failure, message, fullMsg, stackTrace}) => {
-                return `${fullMsg || message}\n${failure}\n${stackTrace}\n\n`
-              }).join('\n')
+              const failureMessage = tests
+                .filter(({ failure }) => failure)
+                .map(({ testName, failure, message, fullMsg, stackTrace }) => {
+                  return `${fullMsg || message}\n${failure}\n${stackTrace}\n\n`;
+                })
+                .join("\n");
 
               resolve({
                 failureMessage: failureMessage || null,
@@ -167,26 +224,18 @@ module.exports = ({ testPath, config, globalConfig }) => {
                 testResults
               });
             })
-            .catch(e => {
-              //todo improve with proper error and remove console.log
-              console.error(e);
-              resolve(
-                fail({
-                  start,
-                  end: Date.now(),
-                  test: {
-                    path: testPath,
-                    errorMessage: e.message,
-                    title: e.message
-                  }
-                })
-              );
+            .catch(error => {
+              // nightwatch then is a deferred, so if the error is not consumed, nothing happens
+              // we need to catch it and throw or reject the runner promise.
+              const testResult = {...errorToTestResult(error), testFilePath: suiteName};
+              resolve(testResult);
             });
         });
       });
     })
-    .catch(e => {
-      console.log(e);
-      throw e;
+    .catch(error => {
+      logger.info("catch outside", { error });
+
+      return errorToTestResult(error);
     });
 };
