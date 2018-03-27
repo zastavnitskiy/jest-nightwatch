@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "main": "src/index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zastavnitskiy/jest-nightwatch"
+  },
   "dependencies": {
     "cosmiconfig": "^4.0.0",
     "create-jest-runner": "^0.2.0"

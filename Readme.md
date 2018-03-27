@@ -20,7 +20,7 @@ This `$ nightwatch --env default -c ./nightwatch.conf.js` should be changed into
 The project uses [cosmiconfig](https://github.com/davidtheclark/cosmiconfig), so you can also put settings 
 into .config.js or .rc file.
 
-Next, we need to tell test to use `jest-runner-nightwatch` – to do that, we will also use package.json:
+Next, we need to tell test to use `jest-runner-nightwatch`. To do that, we will also use package.json:
 
 ```json
 {
