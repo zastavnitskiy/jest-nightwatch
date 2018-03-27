@@ -1,6 +1,6 @@
 {
   "name": "jest-runner-nightwatch",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "src/index.js",
   "license": "MIT",
   "dependencies": {
@@ -11,5 +11,7 @@
     "jest": "^22.4.3",
     "nightwatch": "^0.9.20"
   },
-  "engines" : { "node" : ">=8" }
+  "engines": {
+    "node": ">=8"
+  }
 }
