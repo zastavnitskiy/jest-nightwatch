@@ -3,8 +3,9 @@ module.exports = {
     browser.url("https://google.com");
   },
 
-  afterEach: browser => {
-    
+  afterEach: (browser, done) => {
+    browser.end();
+    done()
   },
 
   "first-test": browser => {
