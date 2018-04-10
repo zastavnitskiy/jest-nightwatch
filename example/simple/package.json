@@ -7,11 +7,13 @@
     "jest": "^22.4.3",
     "jest-runner-nightwatch": "../../",
     "nightwatch": "^0.9.20",
+    "webdriver-manager": "^12.0.6",
     "winston": "^2.4.1"
   },
   "scripts": {
     "nightwatch": "nightwatch --env default -c ./nightwatch.conf.js",
-    "jest": "DISABLE_NIGHTWATCH_OUTPUT=1 jest"
+    "jest": "DISABLE_NIGHTWATCH_OUTPUT=1 jest",
+    "start-selenium": "webdriver-manager update && webdriver-manager start"
   },
   "jest": {
     "runner": "jest-runner-nightwatch"

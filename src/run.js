@@ -7,7 +7,6 @@ const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
 
-console.log('Hello!')
 const winston = require('winston');
 winston.add(winston.transports.File, { filename: '/tmp/runjs.log' });
 winston.info('Hello');
@@ -16,11 +15,14 @@ const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
 });
 
-function errorToTestResult(error) {
+function errorToTestResult(error, extra = {}) {
+  winston.info("errorToTestRestult", JSON.stringify(extra));
   const errorMessage = error.message || "Unknown error";
   const failureMessage = `\nThere was an error while starting the test runner:\n\n${errorMessage}\n\n${
     error.stack
   }\n`;
+
+  const { testFilePath = 'Unknown test' } = extra;
 
   return {
     failureMessage,
@@ -43,7 +45,7 @@ function errorToTestResult(error) {
     },
     sourceMaps: {},
     testExecError: error,
-    testFilePath: "suiteName",
+    testFilePath,
     testResults: [
       {
         ancestorTitles: [],
@@ -219,7 +221,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
               // nightwatch then is a deferred, so if the error is not consumed, nothing happens
               // we need to catch it and throw or reject the runner promise.
               const testResult = {
-                ...errorToTestResult(error),
+                ...errorToTestResult(error, { testFilePath: suiteName}),
                 testFilePath: suiteName
               };
               resolve(testResult);
@@ -228,6 +230,6 @@ module.exports = async function({ testPath, config, globalConfig }) {
       });
     })
     .catch(error => {
-      return errorToTestResult(error);
+      return errorToTestResult(error, {testFilePath: testPath});
     });
 };
