@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "cosmiconfig": "^4.0.0",
-    "create-jest-runner": "^0.3.0"
+    "create-jest-runner": "^0.3.0",
+    "jest": "^22.4.3",
+    "nightwatch": "^0.9.20",
+    "winston": "^2.4.1"
   },
   "peerDependencies": {
     "jest": "^22.4.3",

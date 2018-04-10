@@ -7,6 +7,11 @@ const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
 
+console.log('Hello!')
+const winston = require('winston');
+winston.add(winston.transports.File, { filename: '/tmp/runjs.log' });
+winston.info('Hello');
+
 const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
 });
@@ -159,6 +164,9 @@ module.exports = async function({ testPath, config, globalConfig }) {
             })
             .run()
             .then(nightwatchResults => {
+              
+              winston.info('results, ', JSON.stringify(nightwatchResults));
+
               const { suiteName, tests, passed, failed } = aggregated;
               const testResults = tests.map(
                 ({ testName, failure, fullMsg, stackTrace, message }) => {

@@ -4,9 +4,10 @@
   "main": "src/index.js",
   "license": "MIT",
   "dependencies": {
-    "jest-runner-nightwatch": "../../",
     "jest": "^22.4.3",
-    "nightwatch": "^0.9.20"
+    "jest-runner-nightwatch": "../../",
+    "nightwatch": "^0.9.20",
+    "winston": "^2.4.1"
   },
   "scripts": {
     "nightwatch": "nightwatch --env default -c ./nightwatch.conf.js",
