@@ -11,11 +11,13 @@ const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
 });
 
-function errorToTestResult(error) {
+function errorToTestResult(error, extra = {}) {
   const errorMessage = error.message || "Unknown error";
   const failureMessage = `\nThere was an error while starting the test runner:\n\n${errorMessage}\n\n${
     error.stack
   }\n`;
+
+  const { testFilePath = "Unknown test" } = extra;
 
   return {
     failureMessage,
@@ -38,7 +40,7 @@ function errorToTestResult(error) {
     },
     sourceMaps: {},
     testExecError: error,
-    testFilePath: "suiteName",
+    testFilePath,
     testResults: [
       {
         ancestorTitles: [],
@@ -152,7 +154,6 @@ module.exports = async function({ testPath, config, globalConfig }) {
                 ...test,
                 testName: testSuite.currentTest
               }));
-
               aggregated.passed += passed;
               aggregated.failed += failed;
               aggregated.tests = aggregated.tests.concat(testsWithName);
@@ -160,6 +161,22 @@ module.exports = async function({ testPath, config, globalConfig }) {
             .run()
             .then(nightwatchResults => {
               const { suiteName, tests, passed, failed } = aggregated;
+
+              const { steps = [] } = nightwatchResults;
+
+              const skipped = testSuite.module.isDisabled();
+
+              const skippedTests = steps.map(testName => ({
+                ancestorTitles: [testName],
+                duration: Date.now() - start,
+                failureMessages: null,
+                fullName: `fullname: ${suiteName} - ${testName}`,
+                location: null,
+                numPassingAsserts: 0,
+                status: "skipped",
+                title: `${"title-message"}`
+              }));
+
               const testResults = tests.map(
                 ({ testName, failure, fullMsg, stackTrace, message }) => {
                   return {
@@ -192,7 +209,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
                   end: Date.now(),
                   start
                 },
-                skipped: false,
+                skipped: skipped,
                 snapshot: {
                   added: 0,
                   fileDeleted: false,
@@ -204,14 +221,14 @@ module.exports = async function({ testPath, config, globalConfig }) {
                 sourceMaps: {},
                 testExecError: null,
                 testFilePath: suiteName,
-                testResults
+                testResults: skipped ? skippedTests : testResults
               });
             })
             .catch(error => {
               // nightwatch then is a deferred, so if the error is not consumed, nothing happens
               // we need to catch it and throw or reject the runner promise.
               const testResult = {
-                ...errorToTestResult(error),
+                ...errorToTestResult(error, { testFilePath: suiteName }),
                 testFilePath: suiteName
               };
               resolve(testResult);
@@ -220,6 +237,6 @@ module.exports = async function({ testPath, config, globalConfig }) {
       });
     })
     .catch(error => {
-      return errorToTestResult(error);
+      return errorToTestResult(error, { testFilePath: testPath });
     });
 };
