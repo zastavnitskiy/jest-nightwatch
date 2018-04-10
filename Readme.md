@@ -1,15 +1,17 @@
 # jest-runner-nightwatch
 
-Run your nightwatch tests using jest as a runner. This is an early beta, feedback is appreciated.
+Run your nightwatch tests using jest as a runner. 
 
 # Usage
-First, you will need to move nightwatch commandline options to a config file – 
-because we won't be running nightwatch from commandline anymore.
+Add `jest` configuration and move command line parameters that you used for nightwatch into `jest-runner-nightwatch` configuration in your `package.json` or config files.
 
-This `$ nightwatch --env default -c ./nightwatch.conf.js` should be changed into
+So, if use were runnig nightwatch like this `$ nightwatch --env default -c ./nightwatch.conf.js`, the config will be:
 ```json
 {
-  "jest-runner-nightwatch": {
+ "jest": {
+    "runner": "jest-runner-nightwatch"
+ }, 
+ "jest-runner-nightwatch": {
     "cliOptions": {
       "config": "./nightwatch.conf.js",
       "env": "default"
@@ -20,20 +22,5 @@ This `$ nightwatch --env default -c ./nightwatch.conf.js` should be changed into
 The project uses [cosmiconfig](https://github.com/davidtheclark/cosmiconfig), so you can also put settings 
 into .config.js or .rc file.
 
-Next, we need to tell test to use `jest-runner-nightwatch`. To do that, we will also use package.json:
-
-```json
-{
-  "jest": {
-    "runner": "jest-runner-nightwatch"
-  },
-  "jest-runner-nightwatch": {
-    "cliOptions": {
-      "config": "./nightwatch.conf.js",
-      "env": "default"
-    }
-  }
-}
-```
-Now, instead of running `nightwatch`, you can run `jest`;
+Now, instead of running `nightwatch`, you can run `jest`.
 
