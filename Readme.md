@@ -1,4 +1,4 @@
-# jest-runner-nightwatch
+# jest-runner-nightwatch [![Build Status](https://travis-ci.org/zastavnitskiy/jest-nightwatch.svg?branch=master)](https://travis-ci.org/zastavnitskiy/jest-nightwatch)
 
 Run your nightwatch tests using jest as a runner. 
 
