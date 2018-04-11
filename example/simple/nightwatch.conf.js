@@ -41,7 +41,10 @@ module.exports = {
     "chrome" : {
       "desiredCapabilities": {
         "browserName": "chrome"
-      }
+      },
+      "chromeOptions" : {
+        "args" : ["headless"]
+     }
     },
 
     "edge" : {
