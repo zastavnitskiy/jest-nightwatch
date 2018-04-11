@@ -6,6 +6,9 @@ const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
+// const winston = require("winston");
+// winston.add(winston.transports.File, { filename: "/tmp/runjs.log" });
+// winston.remove(winston.transports.Console);
 
 const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
