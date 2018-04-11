@@ -11,10 +11,7 @@
     "cosmiconfig": "^4.0.0",
     "create-jest-runner": "^0.3.0",
     "jest": "^22.4.3",
-    "nightwatch": "^0.9.20",
-    "pm2": "^2.10.2",
-    "webdriver-manager": "^12.0.6",
-    "winston": "^2.4.1"
+    "nightwatch": "^0.9.20"
   },
   "peerDependencies": {
     "jest": "^22.4.3",
