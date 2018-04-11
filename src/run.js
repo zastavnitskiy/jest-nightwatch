@@ -6,6 +6,9 @@ const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
+const winston = require("winston");
+winston.add(winston.transports.File, { filename: "/tmp/runjs.log" });
+winston.remove(winston.transports.Console);
 
 const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
@@ -140,7 +143,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
           );
           const suiteName = testSuite.getReportKey();
 
-          const aggregated = {
+          const aggregatedResults = {
             passed: 0,
             failed: 0,
             tests: [],
@@ -154,17 +157,76 @@ module.exports = async function({ testPath, config, globalConfig }) {
                 ...test,
                 testName: testSuite.currentTest
               }));
-              aggregated.passed += passed;
-              aggregated.failed += failed;
-              aggregated.tests = aggregated.tests.concat(testsWithName);
+              aggregatedResults.passed += passed;
+              aggregatedResults.failed += failed;
+              aggregatedResults.tests = aggregatedResults.tests.concat(
+                testsWithName
+              );
             })
             .run()
-            .then(nightwatchResults => {
-              const { suiteName, tests, passed, failed } = aggregated;
+            .then(resolvedResults => {
+              const { suiteName, tests, passed, failed } = aggregatedResults;
 
-              const { steps = [] } = nightwatchResults;
+              const clientResults = testSuite.client.results();
+              const clientErrors = testSuite.client.errors();
+              const testSuiteIsDisabled = testSuite.module.isDisabled();
+              const {currentTest} = testSuite;
+              /**
+               * Depending on test failure type,
+               * errors may happen and be delivered here differently.
+               *
+               * In some cases, we need to use the resolve output,
+               * sometimes we read errors from testcase:finished event,
+               * sometimes we have to read errors from the client.
+               *
+               * This has to be fixed in nightwatch itself, but we should
+               * also be reado to handle those cases.
+               */
+              winston.info("clientResults", clientResults);
+              winston.info("clientErrors", clientErrors);
+              winston.info("resolveResults", resolvedResults);
+              winston.info("aggregatedResults", aggregatedResults);
 
-              const skipped = testSuite.module.isDisabled();
+              const { steps = [] } = resolvedResults;
+
+              if (clientErrors && clientErrors.length) {
+                resolve({
+                  failureMessage: clientErrors.join('\n').concat('\n'),
+                  console: null,
+                  numFailingTests: 1,
+                  numPassingTests: 0,
+                  numPendingTests: 0,
+                  perfStats: {
+                    end: Date.now(),
+                    start
+                  },
+                  skipped: false,
+                  snapshot: {
+                    added: 0,
+                    fileDeleted: false,
+                    matched: 0,
+                    unchecked: 0,
+                    unmatched: 0,
+                    updated: 0
+                  },
+                  sourceMaps: {},
+                  testExecError: null,
+                  testFilePath: suiteName,
+                  testResults: clientErrors.map(error => {
+                    return {
+                      ancestorTitles: [currentTest],
+                      duration: Date.now() - start,
+                      failureMessages: [error],
+                      fullName: `fullname`,
+                      location: null,
+                      numPassingAsserts: 0,
+                      status: 'failed',
+                      title: `Test execution error`
+                    };
+                  })
+                });
+                return null;
+              }
 
               const skippedTests = steps.map(testName => ({
                 ancestorTitles: [testName],
@@ -209,7 +271,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
                   end: Date.now(),
                   start
                 },
-                skipped: skipped,
+                skipped: testSuiteIsDisabled,
                 snapshot: {
                   added: 0,
                   fileDeleted: false,
@@ -221,7 +283,7 @@ module.exports = async function({ testPath, config, globalConfig }) {
                 sourceMaps: {},
                 testExecError: null,
                 testFilePath: suiteName,
-                testResults: skipped ? skippedTests : testResults
+                testResults: testSuiteIsDisabled ? skippedTests : testResults
               });
             })
             .catch(error => {

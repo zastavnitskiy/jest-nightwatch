@@ -1,7 +1,8 @@
-const someutil = require('random-name');
 
 module.exports = {
     "first-test": browser => {
+      throw new Error('Error when asserting test');
+
       browser.waitForElementVisible("body", 3000);
       browser.end();
     },
