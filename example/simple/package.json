@@ -11,9 +11,8 @@
     "winston": "^2.4.1"
   },
   "scripts": {
-    "start-webdriver": "webdriver-manager update && webdriver-manager start",
     "nightwatch": "nightwatch --env default -c ./nightwatch.conf.js",
-    "jest": "DISABLE_NIGHTWATCH_OUTPUT=1 jest",
+    "jest": "test_settings_output=0 jest",
     "start-selenium": "webdriver-manager update && webdriver-manager start"
   },
   "jest": {

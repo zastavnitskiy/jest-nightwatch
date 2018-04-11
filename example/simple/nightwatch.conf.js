@@ -1,6 +1,5 @@
 
-const output = typeof process.env.DISABLE_NIGHTWATCH_OUTPUT !== 'undefined' ? !process.env.DISABLE_NIGHTWATCH_OUTPUT : true;
-
+const output = process.env.test_settings_output === '0' ? false : true;
 module.exports = {
   "src_folders" : ["tests"],
   "output_folder" : "reports",
@@ -23,37 +22,24 @@ module.exports = {
       "webdriver.edge.driver" : ""
     }
   },
-
+  output,
   "test_settings" : {
     "default" : {
       "launch_url" : "http://localhost",
       "selenium_port"  : 4444,
       "selenium_host"  : "127.0.0.1",
       "silent": true,
-      output,
       "screenshots" : {
         "enabled" : false,
         "path" : ""
       },
       "desiredCapabilities": {
         "browserName": "chrome",
-        "marionette": true
+        "marionette": true,
+        "chromeOptions" : {
+          "args" : ["headless"]
+      }
       }
     },
-
-    "chrome" : {
-      "desiredCapabilities": {
-        "browserName": "chrome"
-      },
-      "chromeOptions" : {
-        "args" : ["headless"]
-     }
-    },
-
-    "edge" : {
-      "desiredCapabilities": {
-        "browserName": "MicrosoftEdge"
-      }
-    }
   }
 }

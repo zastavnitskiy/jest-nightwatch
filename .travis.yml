@@ -17,5 +17,5 @@ install:
 
 script:
   - echo "Compare the amount of caught errors for similar tests running jest-runner or nightwatch"
-  - yarn nightwatch || 0
-  - yarn jest || 0
+  - nightwatch --env default -c ./nightwatch.conf.js || 0
+  - test_settings_output=0  node_modules/.bin/jest --verbose || 0
