@@ -6,9 +6,6 @@ const Nightwatch = require("nightwatch/lib/index.js");
 const { CliRunner } = Nightwatch;
 const TestSuite = require("nightwatch/lib/runner/testsuite");
 const Runner = require("nightwatch/lib/runner/run");
-const winston = require("winston");
-winston.add(winston.transports.File, { filename: "/tmp/runjs.log" });
-winston.remove(winston.transports.Console);
 
 const cosmiconfigExplorer = cosmiconfig("jest-runner-nightwatch", {
   cliOptions: {}
@@ -182,10 +179,10 @@ module.exports = async function({ testPath, config, globalConfig }) {
                * This has to be fixed in nightwatch itself, but we should
                * also be reado to handle those cases.
                */
-              winston.info("clientResults", clientResults);
-              winston.info("clientErrors", clientErrors);
-              winston.info("resolveResults", resolvedResults);
-              winston.info("aggregatedResults", aggregatedResults);
+              // winston.info("clientResults", clientResults);
+              // winston.info("clientErrors", clientErrors);
+              // winston.info("resolveResults", resolvedResults);
+              // winston.info("aggregatedResults", aggregatedResults);
 
               const { steps = [] } = resolvedResults;
 
