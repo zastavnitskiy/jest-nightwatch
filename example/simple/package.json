@@ -12,7 +12,7 @@
   },
   "scripts": {
     "nightwatch": "nightwatch --env default -c ./nightwatch.conf.js",
-    "jest": "DISABLE_NIGHTWATCH_OUTPUT=1 jest",
+    "jest": "test_settings_output=0 jest",
     "start-selenium": "webdriver-manager update && webdriver-manager start"
   },
   "jest": {
@@ -23,5 +23,8 @@
       "config": "./nightwatch.conf.js",
       "env": "default"
     }
+  },
+  "devDependencies": {
+    "pm2": "^2.10.2"
   }
 }

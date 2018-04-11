@@ -1,0 +1,21 @@
+language: node_js
+
+node_js:
+  - stable
+
+services:
+  - docker
+
+before_install:
+  - docker pull selenium/standalone-chrome
+  - docker run -d -p 4444:4444 -v /dev/shm:/dev/shm selenium/standalone-chrome
+
+
+install:
+  - cd example/simple
+  - yarn install
+
+script:
+  - echo "Compare the amount of caught errors for similar tests running jest-runner or nightwatch"
+  - nightwatch --env default -c ./nightwatch.conf.js || echo "Success"
+  - test_settings_output=0  node_modules/.bin/jest --verbose || echo "Success"
